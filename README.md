@@ -6,13 +6,14 @@
 
 Term: Spring 2020
 
-+ Team ##
++ Team 10
 + Team members
-	+ team member 1
-	+ team member 2
-	+ team member 3
-	+ team member 4
-	+ team member 5
+	+ Li, Guoying (gl2669)
+	+ Ling, Liangcao (ll3337)
+	+ Lyu, Wenfeng (wl2733)
+	+ Miao, Xinwen (xm2242)
+	+ Zhang, Tianya (tz2430)
+	+ Zhao, Siqi (sz2866)
 
 + Project summary: In this project, we created a classification engine for facial emotion recognition. 
 	

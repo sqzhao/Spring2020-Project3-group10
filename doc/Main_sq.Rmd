@@ -219,8 +219,6 @@ baseline.pred <- predict.gbm(object = baseline_2,
                    type = "response")
 
 #prediction result
-#baseline.labels = colnames(baseline.pred)[apply(baseline.pred, 1, which.max)]
-#baseline.confusion.mat = confusionMatrix(dat_test$emotion_idx, as.factor(as.numeric(baseline.labels)))
 pred.result.factor <- as.factor(as.numeric(apply(baseline.pred, 1, which.max)))
 baseline.confusion.mat = confusionMatrix(dat_test$emotion_idx,pred.result.factor)
 # error rate

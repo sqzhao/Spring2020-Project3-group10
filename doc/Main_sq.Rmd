@@ -99,13 +99,13 @@ test_idx <- setdiff(info$Index,train_idx) #500 images
 ### Extract features from images, reading repeatedly from small patches
 ```{r read images}
 ## Slow! - Result stored
-# n_files <- length(list.files(train_image_dir)) #"../data/train_set/images/" -> 2500 total images
+ n_files <- length(list.files(train_image_dir)) #"../data/train_set/images/" -> 2500 total images
 # 
-# image_list <- list()
-# for(i in 1:100){
-#    image_list[[i]] <- readImage(paste0(train_image_dir, sprintf("%04d", i), ".jpg"))
-# }
-# image_list[[1]]
+ image_list <- list()
+ for(i in 1:100){
+    image_list[[i]] <- readImage(paste0(train_image_dir, sprintf("%04d", i), ".jpg"))
+ }
+ image_list[[1]]
 ```
 
 Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
@@ -120,8 +120,8 @@ readMat.matrix <- function(index){
 
 #load fiducial points
 
-# fiducial_pt_list <- lapply(1:n_files, readMat.matrix) #total 2500 files; total 78 fiducial points(x-y location) in a list
-#save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
+ fiducial_pt_list <- lapply(1:n_files, readMat.matrix) #total 2500 files; total 78 fiducial points(x-y location) in a list
+save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
 load("../output/fiducial_pt_list.RData")
 ```
 
@@ -137,20 +137,20 @@ load("../output/fiducial_pt_list.RData")
 ```{r}
 
 source("../lib/feature.R")
-# tm_feature_train <- NA # need add time of construction later
-# tm_feature_test <- NA
+ tm_feature_train <- NA # need add time of construction later
+ tm_feature_test <- NA
 # 
-# if(run.feature.train){
-#   dat_train <- feature(fiducial_pt_list, train_idx) 
-#   # total 2500 imgaes: str(fiducial_pt_list) = list of 2500
-#   #output n(train_idx)=2000 rows, each with 6007 variables: 6006 distances(horizontal+vertical)+emotion_index
-# }
-# if(run.feature.test){
-#   dat_test <- feature(fiducial_pt_list, test_idx)
-# }
+ if(run.feature.train){
+   dat_train <- feature(fiducial_pt_list, train_idx) 
+   # total 2500 imgaes: str(fiducial_pt_list) = list of 2500
+   #output n(train_idx)=2000 rows, each with 6007 variables: 6006 distances(horizontal+vertical)+emotion_index
+ }
+ if(run.feature.test){
+   dat_test <- feature(fiducial_pt_list, test_idx)
+ }
 
-#save(dat_train, file="../output/feature_train.RData")
-#save(dat_test, file="../output/feature_test.RData")
+save(dat_train, file="../output/feature_train.RData")
+save(dat_test, file="../output/feature_test.RData")
 load("../output/feature_train.Rdata")
 load("../output/feature_test.Rdata")
 ```
@@ -279,7 +279,7 @@ hyper_grid %>%
 ########### Sample code
 ```{r}
 
-Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
+#Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
 ```{r}
 train_dir <- "../data/train_set/" # This will be modified for different data sets.
 train_image_dir <- paste(train_dir, "images/", sep="")

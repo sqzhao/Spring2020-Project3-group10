@@ -1,13 +1,10 @@
 ---
 title: "Main"
-author: "Chengliang Tang, Yujie Wang, Tian Zheng"
+author: "Group 10"
 output:
-  html_document:
-    df_print: paged
+  pdf_document: default
+  word_document: default
 ---
-In your final repo, there should be an R markdown file that organizes **all computational steps** for evaluating your proposed Facial Expression Recognition framework. 
-
-This file is currently a template for running evaluation experiments. You should update it according to your codes but following precisely the same structure. 
 
 ```{r message=FALSE}
 if(!require("EBImage")){
@@ -65,7 +62,7 @@ train_pt_dir <- paste(train_dir,  "points/", sep="")
 train_label_path <- paste(train_dir, "label.csv", sep="") 
 ```
 
-
+## Part1 : Baseline model
 ### Step 1: set up controls for evaluation experiments.
 
 In this chunk, we have a set of controls for the evaluation experiments. 
@@ -83,7 +80,7 @@ run.feature.train=TRUE # process features for training set
 run.test=TRUE # run evaluation on an independent test set
 run.feature.test=TRUE # process features for test set
 ```
-Using cross-validation or independent test set evaluation, we compare the performance of models with different specifications. In this Starter Code, we tune parameter k (number of neighbours) for KNN.
+Using cross-validation, we compare the performance of models with different specifications. In this case, we tune parameter t (number of trees) for GBM. 
 
 ```{r model_setup}
 t = c(50,100,150,200,250)
@@ -101,7 +98,7 @@ test_idx <- setdiff(info$Index,train_idx)
 ```
 
 
-Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
+Fiducial points are stored in matlab format. In this case, we select half face points as fiducial points, 23 points in total. In this step, we read them and store them in a list.
 ```{r read fiducial points}
 #function to read fiducial points
 #input: index
@@ -117,11 +114,7 @@ save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
 ```
 
 ```{r select fiducial_pt}
-#inner points
-#for (i in 1:2500){
-#  fiducial_pt_list[[i]] = fiducial_pt_list[[i]][c(19,21,23, #27,29,31,2,4,6,8,11,13,15,17,1,10,41,42,44,46,47,50,51,52,53,54,55,56,57,59,62,67,71,75),]
-#}
-# half points
+# half face points
 for (i in 1:2500){
   fiducial_pt_list[[i]] = fiducial_pt_list[[i]][c(19,21,23, 2,4,6,8,1,41,42,44,50,51,52,56,57,59,62,67,71,35,37,38),]
 }
@@ -172,7 +165,7 @@ Call the train model and test model from library.
   + Input: an R object that contains a trained classifier.
   + Output: training model specification
 
-+ In this Starter Code, we use KNN to do classification. 
++ In this Starter Code, we use GBM to do classification. 
 
 ```{r loadlib}
 source("../lib/train.R") 
@@ -180,7 +173,7 @@ source("../lib/test.R")
 ```
 
 #### Model selection with cross-validation
-* Do model selection by choosing among different values of training model parameters.
+* Do model selection by choosing among different values of training model parameters. In this case, we use different number of trees, t. 
 ```{r runcv, eval=F}
 source("../lib/cross_validation.R")
 if(run.cv){
@@ -199,7 +192,7 @@ if(run.cv){
   load("../output/err_cv.RData")
   err_cv <- as.data.frame(err_cv) 
   colnames(err_cv) <- c("mean_error", "sd_error")
-  err_cv$k = as.factor(t)
+  err_cv$t = as.factor(t)
   err_cv %>% 
     ggplot(aes(x = t, y = mean_error,
                ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
@@ -240,19 +233,23 @@ accu <- mean(dat_test$emotion_idx == pred)
 cat("The accuracy of model:", model_labels[which.min(err_cv[,1])], "is", accu*100, "%.\n")
 
 library(caret)
+pred <- factor(pred, levels = levels(dat_test$emotion_idx))
 confusionMatrix(pred, dat_test$emotion_idx)
 ```
-
-Note that the accuracy is not high but is better than that of ramdom guess(4.5%). 
+In this case, we have 38.2 % accuracy when we use 250 as number of trees in our GBM function. 
 
 ### Summarize Running Time
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
 ```{r running_time}
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
 cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
-#cat("Time for training model=", tm_train[1], "s \n")
+cat("Time for training model=", tm_train[1], "s \n")
 cat("Time for testing model=", tm_test[1], "s \n")
 ```
+Time for constructing training features= 0.39 s 
+Time for constructing testing features= 0.08 s 
+Time for training model= 78.33 s 
+Time for testing model= 0.1 s
 
 ###Reference
 - Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.

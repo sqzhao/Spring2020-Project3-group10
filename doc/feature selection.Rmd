@@ -1,0 +1,130 @@
+---
+title: "feature_selection"
+author: "WENFENG LYU"
+date: "21/03/2020"
+output: html_document
+---
+
+### Step 1 set work directories
+```{r message=FALSE}
+if(!require("EBImage")){
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("EBImage")
+}
+if(!require("R.matlab")){
+  install.packages("R.matlab")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+if(!require("dplyr")){
+  install.packages("dplyr")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+if(!require("caret")){
+  install.packages("caret")
+}
+if(!require("mlbench")){
+  install.packages("mlbench")
+}
+library(R.matlab)
+library(readxl)
+library(dplyr)
+library(EBImage)
+library(ggplot2)
+library(caret)
+library(mlbench)
+set.seed(0)
+setwd("/Users/mac/Desktop/GitHub/Spring2020-Project3-group10/doc")
+```
+
+
+```{r}
+train_dir <-  "../data/train_set/" # This will be modified for different data sets.
+train_image_dir <- paste(train_dir, "images/", sep="")
+train_pt_dir <- paste(train_dir,  "points/", sep="")
+train_label_path <- paste(train_dir, "label.csv", sep="") 
+run.feature.train=TRUE # process features for training set
+run.test=TRUE # run evaluation on an independent test set
+run.feature.test=TRUE # process features for test set
+```
+
+### Step 2: import data and train-test split 
+```{r}
+#train-test split
+set.seed(7)
+info <- read.csv(train_label_path)
+n <- nrow(info)
+n_train <- round(n*(4/5), 0)
+train_idx <- sample(info$Index, n_train, replace = F)
+test_idx <- setdiff(info$Index,train_idx)
+
+```
+
+### Step 3: construct features and responses
+
++ The follow plots show how pairwise distance between fiducial points can work as feature for facial emotion recognition.
+
+  + In the first column, 78 fiducials points of each emotion are marked in order. 
+  + In the second column distributions of vertical distance between right pupil(1) and  right brow peak(21) are shown in  histograms. For example, the distance of an angry face tends to be shorter than that of a surprised face.
+  + The third column is the distributions of vertical distances between right mouth corner(50)
+and the midpoint of the upper lip(52).  For example, the distance of an happy face tends to be shorter than that of a sad face.
+
+![Figure1](../figs/feature_visualization.jpg)
+
+`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later. 
+  
+  + `feature.R`
+  + Input: list of images or fiducial point
+  + Output: an RData file that contains extracted features and corresponding responses
+
+```{r}
+# load the data
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(dat_train <- feature(fiducial_pt_list, train_idx))
+}
+tm_feature_test <- NA
+if(run.feature.test){
+  tm_feature_test <- system.time(dat_test <- feature(fiducial_pt_list, test_idx))
+}
+```
+
+
+```{r}
+# check the dimension of the dataset
+dim(dat_train)
+```
+
+
+### Step 4: construct recursive feature elimination (rfe) method
+
++ rfe is an automatic feature selection method that can be used to build many models with different subsets of a dataset and identify those attributes that are and are not required to build an accurate model.
+
+```{r}
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+# run the RFE algorithm
+tm_feature_selection <- system.time(results <- rfe(dat_train[,-6007], dat_train[,6007],size = c(1:20),rfeControl=control))
+save(results, file="../output/feature_selection.RData")
+```
+
+
+### Step 5: summarize the rfe result
+
+
+```{r}
+# summarize the results
+print(results)
+# list the chosen features
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+

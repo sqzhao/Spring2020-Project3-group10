@@ -74,7 +74,7 @@ display_fid_pt <- function(identity){
     lapply(1:length(indices), display_single) 
 }
 
-display_fid_pt(110)
+display_fid_pt(386)
 
 ```
 

@@ -37,6 +37,10 @@ if(!require("gbm")){
   install.packages("gbm")
 }
 
+if(!require("h2o")){
+  install.packages("h2o")
+}
+
 library(R.matlab)
 library(readxl)
 library(dplyr)
@@ -44,6 +48,7 @@ library(EBImage)
 library(ggplot2)
 library(caret)
 library(gbm)
+library(h2o)
 ```
 
 ### Step 0 set work directories
@@ -98,7 +103,7 @@ test_idx <- setdiff(info$Index,train_idx)
 ```
 
 
-Fiducial points are stored in matlab format. In this case, we select half face points as fiducial points, 23 points in total. In this step, we read them and store them in a list.
+Fiducial points are stored in matlab format. In this case, we select inner face points as fiducial points, 33 points in total. In this step, we read them and store them in a list.
 ```{r read fiducial points}
 #function to read fiducial points
 #input: index
@@ -234,14 +239,11 @@ if(run.test){
 
 * evaluation
 ```{r}
-accu <- mean(dat_test$emotion_idx == pred)
-cat("The accuracy of model:", model_labels[which.min(err_cv[,1])], "is", accu*100, "%.\n")
 
-library(caret)
 pred <- factor(pred, levels = levels(dat_test$emotion_idx))
 confusionMatrix(pred, dat_test$emotion_idx)
 ```
-In this case, we have 38.2 % accuracy when we use 250 as number of trees in our GBM function. 
+In this case, we have 42 % accuracy when we use 250 as number of trees in our GBM function. 
 
 ### Summarize Running Time
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
@@ -251,10 +253,118 @@ cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
 cat("Time for training model=", tm_train[1], "s \n")
 cat("Time for testing model=", tm_test[1], "s \n")
 ```
-Time for constructing training features= 0.39 s 
-Time for constructing testing features= 0.08 s 
-Time for training model= 78.33 s 
-Time for testing model= 0.1 s
+Time for constructing training features=  0.39 s 
+Time for constructing testing features=  0.04 s 
+Time for training model=  146.92 s 
+Time for testing model=  0.2 s
 
 ###Reference
 - Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.
+
+
+
+
+
+
+
+
+##Part2 : Advanced Model
+### Step 4: Train a classification model with training features and responses
+Call the train model and test model from library. 
+
+`train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps. 
+
++ `train.R`
+  + Input: a data frame containing features and labels and a parameter list.
+  + Output:a trained model
++ `test.R`
+  + Input: the fitted classification model using training data and processed features from testing images 
+  + Input: an R object that contains a trained classifier.
+  + Output: training model specification
+
++ In this Starter Code, we use GBM to do classification. 
+
+```{r loadlib}
+h2o.init()
+h2o_train<-as.h2o(dat_train)
+h2o_test<-as.h2o(dat_test)
+source("../lib/train_adv.R") 
+source("../lib/test_adv.R")
+```
+
+#### Model selection with cross-validation
+* Do model selection by choosing among different values of training model parameters. In this case, we use different number of trees, t. 
+```{r runcv, eval=F}
+#source("../lib/cross_validation_adv.R")
+#if(run.cv){
+#  err_cv <- matrix(0, nrow = length(t), ncol = 2)
+#  for(i in 1:length(t)){
+#    cat("tree number=", t[i], "\n")
+#    err_cv[i,] <- cv.function(dat_train, K, t[i])
+#  save(err_cv, file="../output/err_cv.RData")
+#  }
+#}
+```
+
+Visualize cross-validation results. 
+```{r cv_vis}
+#if(run.cv){
+#  load("../output/err_cv.RData")
+#  err_cv <- as.data.frame(err_cv) 
+#  colnames(err_cv) <- c("mean_error", "sd_error")
+#  err_cv$t = as.factor(t)
+#  err_cv %>% 
+#    ggplot(aes(x = t, y = mean_error,
+#               ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
+#    geom_crossbar() +
+#    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+#}
+
+```
+
+
+* Choose the "best" parameter value
+```{r best_model}
+#if(run.cv){
+#  model_best <- t[which.min(err_cv[,1])]
+#}
+#par_best <- list(t = model_best)
+```
+
+* Train the model with the entire training set using the selected model (model parameter) via cross-validation.
+```{r final_train}
+tm_train=NA
+tm_train <- system.time(fit_train_adv <- train_adv(h2o_train))
+save(fit_train_adv, file="../output/fit_train_adv.RData")
+```
+
+### Step 5: Run test on test images
+```{r test}
+tm_test=NA
+if(run.test){
+  load(file="../output/fit_train_adv.RData")
+  tm_test <- system.time(pred <- test_adv(fit_train_adv$model, h2o_test))
+}
+```
+
+* evaluation
+```{r}
+p<-as.data.frame(pred[[1]])
+p <- factor(p[[1]], levels = levels(dat_test$emotion_idx))
+confusionMatrix(p, dat_test$emotion_idx)
+```
+ 
+
+### Summarize Running Time
+Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
+```{r running_time}
+cat("Time for constructing training features=", tm_feature_train[1], "s \n")
+cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
+cat("Time for training model=", tm_train[1], "s \n")
+cat("Time for testing model=", tm_test[1], "s \n")
+```
+Time for constructing training features=  s 
+Time for constructing testing features=  s 
+Time for training model=  s 
+Time for testing model=  s
+

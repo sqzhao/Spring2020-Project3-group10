@@ -1,21 +1,17 @@
 ---
-title: "Main"
+title: "Adv Candidate - PCA+LDA"
 author: "Group 10"
 output:
   html_document:
     df_print: paged
 ---
-
-# reference:
-# methodology of advanced model: https://link.springer.com/chapter/10.1007%2F978-3-030-16848-3_11
-# explained feature extraction(PCA, LDA): https://medium.com/@cxu24/common-methods-for-feature-extraction-pca-and-lda-7b1f5679e3bf
-http://ce.sharif.edu/courses/91-92/2/ce725-2/resources/root/Lectures/Feature%20Extraction.pdf
-# LDA as a classifier or served to dimension reduction https://towardsdatascience.com/is-lda-a-dimensionality-reduction-technique-or-a-classifier-algorithm-eeed4de9953a
-# https://www.kaggle.com/shravank/predicting-breast-cancer-using-pca-lda-in-r
-
-Why PCA? Due to the number of variables in the model, we can try using a dimensionality reduction technique to unveil any patterns in the data.
-
-By proceeding with PCA we are assuming the linearity of the combinations of our variables within the dataset. By choosing only the linear combinations that provide a majority (>= 85%) of the co-variance, we can reduce the complexity of our model. We can then more easily see how the model works and provide meaningful graphs and representations of our complex dataset.
+### Result:   
+|  pca lda model |  
+| ------ | ------ | 
+| train accuracy | 58.3% | 
+| test accuracy | 51.6% | 
+| training time | 5.454s |
+| testing time | 0.005s |
 
 
 ```{r message=FALSE}
@@ -49,6 +45,9 @@ if(!require("caret")){
 if(!require("gbm")){
   install.packages("gbm")
 }
+if(!require("MASS")){
+  install.packages("MASS")
+}
 
 library(R.matlab)
 library(readxl)
@@ -57,32 +56,22 @@ library(EBImage)
 library(ggplot2)
 library(caret)
 library(gbm)
+library(MASS)
 ```
 
 ### Step 0 set work directories
-```{r wkdir, eval=FALSE}
-# set to the local path
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-```
+```{r directories, eval=FALSE}
+# # set to the local path
+# #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd("/Users/sqzhao/Documents/columbia/stat5243\ ads/project3/Spring2020-Project3-group10/doc/candidate\ models/Main_pca.Rmd")
 
-Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
-```{r directories}
-train_dir <- "../data/train_set/"
-train_image_dir <- paste(train_dir, "images/", sep="") #"../data/train_set/images/"
-train_pt_dir <- paste(train_dir,  "points/", sep="") #"../data/train_set/points/"
-train_label_path <- paste(train_dir, "label.csv", sep="") #"../data/train_set/label.csv"
+train_dir <- "../../data/train_set/"
+train_image_dir <- paste(train_dir, "images/", sep="") #"../../data/train_set/images/"
+train_pt_dir <- paste(train_dir,  "points/", sep="") #"../../data/train_set/points/"
+train_label_path <- paste(train_dir, "label.csv", sep="") #"../../data/train_set/label.csv"
 ```
 
 ### Step 1: set up controls for evaluation experiments.
-
-In this chunk, we have a set of controls for the evaluation experiments. 
-
-+ (T/F) cross-validation on the training set
-+ (number) K, the number of CV folds
-+ (T/F) process features for training set
-+ (T/F) run evaluation on an independent test set
-+ (T/F) process features for test set
-
 ```{r setup contol harness}
 run.cv <- TRUE # run cross-validation on the training set
 K <- 5  # number of CV folds
@@ -92,44 +81,24 @@ run.test <- TRUE # run evaluation on an independent test set
 ```
 
 ### Step 2: import data and train-test split 
-```{r training data}
+```{r train-test split data}
 #train-test split
-#set.seed(123)
-info <- read.csv(train_label_path) #"../data/train_set/label.csv"
-n <- nrow(info) #2500 imgaes
+#info <- read.csv(train_label_path)
+info <- read.csv("/Users/sqzhao/Documents/columbia/stat5243\ ads/project3/Spring2020-Project3-group10/data/train_set/label.csv") 
+n <- nrow(info) 
 n_train <- round(n*(4/5), 0) #2000 images
+set.seed(1)
 train_idx <- sample(info$Index, n_train, replace = F)
 test_idx <- setdiff(info$Index,train_idx) #500 images
-```
-
-Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
-```{r read fiducial points}
-#function to read fiducial points "../data/train_set/points/"
-#input: index
-#output: matrix of fiducial points corresponding to the index
-
-readMat.matrix <- function(index){
-     return(round(readMat(paste0(train_pt_dir, sprintf("%04d", index), ".mat"))[[1]],0))
-}
-
-#load fiducial points
-fiducial_pt_list <- lapply(1:n_files, readMat.matrix) #total 2500 files; total 78 fiducial points(x-y location) in a list
-# save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
-load("../output/fiducial_pt_list.RData")
 ```
 
 
 ### Step 3: construct features and responses
 
-`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later. 
-  
-  + `feature.R`
-  + Input: list of images or fiducial point
-  + Output: an RData file that contains extracted features and corresponding responses
-
 ```{r}
-load("../output/fiducial_pt_list.RData")
+load("../../output/fiducial_pt_list.RData")
 fiducial_pt_half <- list()
+# all points:
 # middle: 35:44 nose
 #         50:52,56:59,62,63 mouse
 # left: 1:9,19:26 eye and brow
@@ -139,113 +108,80 @@ for (i in 1:2500){
   fiducial_pt_half[[i]] = fiducial_pt_list[[i]][c(1:9,19:26,35:44,50:52,56:59,62,63,64:71),]
 }
 
-
 fiducial_pt_inner <- list()
-# inner: 1:63
+# inner: 
 for (i in 1:2500){
-  fiducial_pt_inner[[i]] = fiducial_pt_list[[i]][c(1:63),]
+  fiducial_pt_inner[[i]] <- fiducial_pt_list[[i]][c(19,21,23, 27,29,31,2,4,6,8,11,13,15,17,1,10,41,42,44,46,47,50,51,38,53,54,55,57,59,62,67,71,75),]
 }
 
 ```
 
-```{r half train-test split}
-source("../lib/feature.R")
+
+```{r inner train-test split}
+source("../../lib/feature.R")
 tm_feature_train <- NA # need add time of construction later
 tm_feature_test <- NA
 
 if(run.feature.train){
- dat_train_half <- feature(fiducial_pt_half, train_idx)
+  dat_train_inner <- feature(fiducial_pt_inner, train_idx)
 }
 
 if(run.feature.train){
-  dat_test_half <- feature(fiducial_pt_half, test_idx)
+  dat_test_inner <- feature(fiducial_pt_inner, test_idx)
 }
 
-save(dat_train_half, file="../output/feature_train_half.RData")
-save(dat_test_half, file="../output/feature_test_half.RData")
-load("../output/feature_train_half.RData")
-load("../output/feature_test_half.RData")
 ```
 
-
 Step 4: Advanced Model
-PCA 
+PCA for dimension reduction of the features and resolve the colllinearity problem when fitting to LDA.
 
+Train and Test
 ```{r pca}
-pca <- princomp(dat_train_half[,-ncol(dat_train_half)], cor = TRUE)
-#biplot(pca)
-
-# Plot variance explained for each principal component
-plot(pca, xlab = "Principal Component", type = "b")
+train_start = proc.time()
+pca <- princomp(dat_train_inner[,-ncol(dat_train_inner)], cor = TRUE)
 
 # Calculate variability of each component
 pr.cvar <- pca$sdev ^ 2
 # Variance explained by each principal component: pve
 pve_cov <- pr.cvar/sum(pr.cvar)
-plot(pve_cov[1:30], xlab = "Principal Component", ylab = "Proportion of Variance Explained", ylim = c(0, 1), type = "b")
+plot(pve_cov[1:100], xlab = "Principal Component", ylab = "Proportion of Variance Explained", ylim = c(0, 1), type = "b")
 # Plot cumulative proportion of variance explained
-plot(cumsum(pve_cov[1:30]), xlab = "Principal Component", 
+plot(cumsum(pve_cov[1:100]), xlab = "Principal Component", 
      ylab = "Cumulative Proportion of Variance Explained", 
      ylim = c(0, 1), type = "b")
-# Comp.10
-# 0.8995642
-# Comp.20
-# 0.9503642
+abline(h=0.95, col="red", lty=3)
+abline(v=40, col="red", lty=3)
+abline(v=50, col="red", lty=3)
 
-```
 
-By using PCA we took a complex model of x (or more) predictors and condensed the model down to x linear combinations of the various predictors.
-
-```{r}
-ls(pca)
-
-n.pc <- 50
+n.pc <- 45
 train_x_pca <- data.frame(pca$scores[,1:n.pc]) 
-head(train_x_pca)
-train_y <- dat_train_half[ncol(dat_train_half)]
-head(train_y)
-test_y <- dat_test_half[ncol(dat_test_half)]
-head(test_y)
-#colnames(train_x_pca) <- c(1:n.pc)
+train_y <- dat_train_inner[ncol(dat_train_inner)]
 train_pca <- cbind(train_x_pca, train_y)
-head(train_pca)
-
-test_x_pca <- data.frame(predict(pca, dat_test_half[,-1893])[,1:n.pc])
-test_pca <- cbind(test_x_pca, test_y)
 
 train <- train_pca
+
+lda.model <- lda(emotion_idx ~ ., data=train)
+lda.train.pred <-  predict(lda.model, train[-(n.pc+1)])
+confusionMatrix(lda.train.pred$class, train$emotion_idx)$overall["Accuracy"]
+
+train_end = proc.time()
+train_time <- train_end-train_start
+train_time
+
+test_x_pca <- data.frame(predict(pca, dat_test_inner[,-1893])[,1:n.pc])
+test_y <- dat_test_inner[ncol(dat_test_inner)]
+test_pca <- cbind(test_x_pca, test_y)
 test <- test_pca
 
-
-# training_set[-14] = scale(training_set[-14])
-# test_set[-14] = scale(test_set[-14])
-
-library(MASS)
-lda.model <- lda(emotion_idx ~ ., data=train)
-lda.test.pred <-  predict(lda.model, test[-(n.pc+1)])
+test_time <- system.time(lda.test.pred <-  predict(lda.model, test[-(n.pc+1)]))
+test_time
 confusionMatrix(lda.test.pred$class, test$emotion_idx)$overall["Accuracy"]
-
 ```
 
-```{r svm - not finished yet}
 
-as.matrix(train_x_pca) %*% as.matrix(lda.model$scaling)
-
-# Fitting SVM the to the  training set
-# install.packages('e1071')
-library('e1071')
-training_set <-  as.data.frame(predict(lda.model))
-testing_set <- as.data.frame(lda.test.pred)#[c(2:23,1)]#[c(24:44,1)]
-classifier <-  svm(formula = class ~ .,
-                 data = training_set,
-                 type = 'C-classification',
-                 kernel = 'linear')
-
-#Predicting Test set results
-y_pred = predict(classifier, newdata = as.data.frame(lda.test.pred)[,-1])
-
-#Making the confusion matrix
-confusionMatrix(y_pred, test$emotion_idx)$overall["Accuracy"]
-
-```
-
+### reference:
+- methodology of advanced model: https://link.springer.com/chapter/10.1007%2F978-3-030-16848-3_11
+- explained feature extraction(PCA, LDA): https://medium.com/@cxu24/common-methods-for-feature-extraction-pca-and-lda-7b1f5679e3bf
+http://ce.sharif.edu/courses/91-92/2/ce725-2/resources/root/Lectures/Feature%20Extraction.pdf
+- LDA as a classifier or served to dimension reduction https://towardsdatascience.com/is-lda-a-dimensionality-reduction-technique-or-a-classifier-algorithm-eeed4de9953a, https://www.kaggle.com/shravank/predicting-breast-cancer-using-pca-lda-in-r

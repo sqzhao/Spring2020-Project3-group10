@@ -16,14 +16,15 @@ train_adv <- function(feature_df = h2o_train, par = NULL){
 
 
   y<-'emotion_idx'
-  nfolds <- 5
   
   
-  #if(is.null(par)){
-    #t = 100
-  #} else {
-    #t = par$t
-  #}
+  if(is.null(par)){
+    t = 200
+    nfolds = 5
+  } else {
+    t = par$t
+    nfolds = par$nfolds
+  }
   
   my_gbm <- h2o.gbm(y = y,
                     training_frame = feature_df,
@@ -40,7 +41,7 @@ train_adv <- function(feature_df = h2o_train, par = NULL){
   my_dl<-h2o.deeplearning(y=y,
                           training_frame = feature_df,
                           distribution = "multinomial",
-                          hidden = c(200,200),
+                          hidden = c(t,t),
                           nfolds = nfolds,
                           fold_assignment = "Modulo",
                           seed = 1,
@@ -49,7 +50,8 @@ train_adv <- function(feature_df = h2o_train, par = NULL){
   ensemble <- h2o.stackedEnsemble(y = y,
                                   training_frame = feature_df,
                                   model_id = "my_ensemble",
-                                  base_models = list(my_gbm, my_dl))
+                                  base_models = list(my_gbm, my_dl),
+                                  seed =1)
   
   client_model <- list(model=ensemble)
   

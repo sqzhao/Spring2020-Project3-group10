@@ -1,0 +1,161 @@
+---
+title: "Adv Candidate - SVM"
+author: "Group 10"
+date: "2020/4/1"
+output: html_document
+---
+### Result:   
+|  svm model |  
+| ------ | ------ | 
+| train accuracy | 68.55% | 
+| test accuracy | 43.2% | 
+---
+
+```{r message=FALSE}
+if(!require("EBImage")){
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("EBImage")
+}
+if(!require("R.matlab")){
+  install.packages("R.matlab")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+if(!require("dplyr")){
+  install.packages("dplyr")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+if(!require("caret")){
+  install.packages("caret")
+}
+if(!require("gbm")){
+  install.packages("gbm")
+}
+if(!require("h2o")){
+  install.packages("h2o")
+}
+if(!require("e1071")){
+  install.packages("e1071")
+}
+if(!require("kernlab")){
+  install.packages("kernlab")
+}
+library(R.matlab)
+library(readxl)
+library(dplyr)
+library(EBImage)
+library(ggplot2)
+library(caret)
+library(gbm)
+library(h2o)
+library(e1071)
+library(kernlab)
+```
+
+### Step 0 set work directories
+```{r wkdir, eval=FALSE}
+set.seed(0)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# here replace it with your own path or manually set it in RStudio to where this rmd file is located. 
+# use relative path for reproducibility
+```
+
+Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
+```{r}
+train_dir <- "../../data/train_set/" # This will be modified for different data sets.
+train_image_dir <- paste(train_dir, "images/", sep="")
+train_pt_dir <- paste(train_dir,  "points/", sep="")
+train_label_path <- paste(train_dir, "label.csv", sep="") 
+```
+
+### Step 1: set up controls for evaluation experiments.
+
+
+```{r exp_setup}
+run.cv=TRUE # run cross-validation on the training set
+K <- 5  # number of CV folds
+run.feature.train=TRUE # process features for training set
+run.test=TRUE # run evaluation on an independent test set
+run.feature.test=TRUE # process features for test set
+```
+
+### Step 2: import data and train-test split 
+```{r}
+#train-test split
+info <- read.csv(train_label_path)
+n <- nrow(info)
+n_train <- round(n*(4/5), 0)
+train_idx <- sample(info$Index, n_train, replace = F)
+test_idx <- setdiff(info$Index,train_idx)
+```
+
+
+Fiducial points are stored in matlab format. In this case, we select inner face points as fiducial points, 33 points in total. In this step, we read them and store them in a list.
+```{r read fiducial points}
+#function to read fiducial points
+#input: index
+#output: matrix of fiducial points corresponding to the index
+readMat.matrix <- function(index){
+     return(round(readMat(paste0(train_pt_dir, sprintf("%04d", index), ".mat"))[[1]],0))
+}
+#load fiducial points
+n_files <- length(list.files(train_image_dir))
+fiducial_pt_list <- lapply(1:n_files, readMat.matrix)
+save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
+```
+
+```{r select fiducial_pt}
+#inner points
+for (i in 1:2500){
+  fiducial_pt_list[[i]] = fiducial_pt_list[[i]][c(19,21,23, 27,29,31,2,4,6,8,11,13,15,17,1,10,41,42,44,46,47,50,51,38,53,54,55,57,59,62,67,71,75),]
+}
+```
+### Step 3: construct features and responses
+
+
+```{r feature}
+source("../../lib/feature.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(dat_train <- feature(fiducial_pt_list, train_idx))
+}
+
+tm_feature_test <- NA
+if(run.feature.test){
+  tm_feature_test <- system.time(dat_test <- feature(fiducial_pt_list, test_idx))
+}
+save(dat_train, file="../output/feature_train.RData")
+save(dat_test, file="../output/feature_test.RData")
+
+```
+
+### Step 4: Advanced model candidate - SVM 
+
+
+```{r svm}
+# tuning, pick the best parameters 
+classifier = train(form = emotion_idx~., data =dat_train, method = 'svmRadial')
+save(classifier,file="../output/svmclassifier.RData")
+
+classifier$bestTune
+#training
+model_svm = ksvm(emotion_idx ~ ., data = dat_train, kernel = 'rbfdot', C = 1, sigma = 0.0006176977)
+
+ksvm.pred.train <- predict(object = model_svm)
+accu <- mean(dat_train$emotion_idx == ksvm.pred.train)
+
+# test
+ksvm.pred.test <- predict(object = model_svm, newdata = dat_test)
+accu.test <- mean(dat_test$emotion_idx == ksvm.pred.test)
+
+```
+
+###Reference
+- https://www.kdnuggets.com/2016/06/select-support-vector-machine-kernels.html
+- https://www.hackerearth.com/blog/developers/simple-tutorial-svm-parameter-tuning-python-r/

@@ -154,11 +154,11 @@ tm_feature_train <- NA # need add time of construction later
 tm_feature_test <- NA
 
 if(run.feature.train){
- dat_train_half <- feature(fiducial_pt_half, train_idx)
+ dat_train_half <- feature(fiducial_pt_inner, train_idx)
 }
 
 if(run.feature.train){
-  dat_test_half <- feature(fiducial_pt_half, test_idx)
+  dat_test_half <- feature(fiducial_pt_inner, test_idx)
 }
 
 save(dat_train_half, file="../output/feature_train_half.RData")

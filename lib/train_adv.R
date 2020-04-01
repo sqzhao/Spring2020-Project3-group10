@@ -29,7 +29,7 @@ train_adv <- function(feature_df = h2o_train, par = NULL){
   my_gbm <- h2o.gbm(y = y,
                     training_frame = feature_df,
                     distribution = "multinomial",
-                    ntrees = 50,
+                    ntrees = 150,
                     max_depth = 3,
                     min_rows = 2,
                     learn_rate = 0.1,

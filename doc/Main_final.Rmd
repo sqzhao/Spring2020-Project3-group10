@@ -2,8 +2,7 @@
 title: "Main"
 author: "Group 10"
 output:
-  pdf_document: default
-  word_document: default
+  html_document
 ---
 
 ```{r message=FALSE}
@@ -49,6 +48,7 @@ library(ggplot2)
 library(caret)
 library(gbm)
 library(h2o)
+h2o.init()
 ```
 
 ### Step 0 set work directories
@@ -122,7 +122,7 @@ save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
 
 #inner points
 for (i in 1:2500){
-  fiducial_pt_list[[i]] = fiducial_pt_list[[i]][c(19,21,23, 27,29,31,2,4,6,8,11,13,15,17,1,10,41,42,44,46,47,50,51,38,53,54,55,57,59,62,67,71,75),]
+  fiducial_pt_list[[i]] = fiducial_pt_list[[i]][c(4,8,2,6,13,17,11,15,43,44,45,19,23,25,31,27,33,37,50,54,59,62,71,41,47,1,10,57,63,55),]
 }
 
 ```
@@ -263,7 +263,7 @@ cat("Time for testing model=", tm_test[1], "s \n")
 
 
 ##Part2 : Advanced Model
-### Step 4: Train a classification model with training features and responses
+### Train a classification model with training features and responses
 Call the train model and test model from library. 
 
 `train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps. 
@@ -276,10 +276,9 @@ Call the train model and test model from library.
   + Input: an R object that contains a trained classifier.
   + Output: training model specification
 
-+ In this Starter Code, we use GBM to do classification. 
++ In this Starter Code, we use a stacking of GBM and neural network to do classification. 
 
-```{r loadlib}
-h2o.init()
+```{r}
 
 h2o_train<-as.h2o(dat_train)
 h2o_test<-as.h2o(dat_test)
@@ -288,11 +287,11 @@ source("../lib/test_adv.R")
 ```
 
 #### Model selection with cross-validation
-* Do model selection by choosing among different values of training model parameters. In this case, we use different number of trees, t. 
-```{r runcv, eval=F}
+* Do model selection by choosing among different values of training model parameters. In this case, we mainly focus on the hidden layer size, because we already examine how number of tree will influence the performance of GBM model.   
+```{r , eval=F}
 
 source("../lib/cross_validation_adv.R")
-t<-c(100, 200,300)
+t<-c(50, 100, 200)
 if(run.cv){
   err_cv <- matrix(0, nrow = length(t), ncol = 1)
   for(i in 1:length(t)){
@@ -304,7 +303,7 @@ if(run.cv){
 ```
 
 * Choose the "best" parameter value
-```{r best_model}
+```{r}
 if(run.cv){
   model_best <- t[which.min(err_cv[,1])]
 }
@@ -312,21 +311,22 @@ par_best <- list(t = model_best,nfolds = 5)
 ```
 
 * Train the model with the entire training set using the selected model (model parameter) via cross-validation.
-```{r final_train}
+```{r }
 tm_train=NA
 time_start<-Sys.time()
 fit_train_adv <- train_adv(h2o_train, par_best)
 time_end<-Sys.time()
 tm_train<-as.numeric(difftime(time_end, time_start))*60
-save(fit_train_adv, file="../output/fit_train_adv.RData")
+# delete my_ensemble in "../output/"  if you need to run the following code (to save the new model)
+#h2o.saveModel(fit_train_adv$model, path ="../output/")
 ```
 
 ### Step 5: Run test on test images
-```{r test}
+```{r }
 tm_test=NA
 if(run.test){
-  load(file="../output/fit_train_adv.RData")
-  tm_test <- system.time(pred <- test_adv(fit_train_adv$model, h2o_test))
+  model<-h2o.loadModel(path ="../output/my_ensemble")
+  tm_test <- system.time(pred <- test_adv(model, h2o_test))
 }
 ```
 
@@ -340,14 +340,11 @@ confusion_matrix<-as.data.frame(h2o.confusionMatrix(fit_train_adv$model, newdata
 
 ### Summarize Running Time
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
-```{r running_time}
+```{r }
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
 cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
 cat("Time for training model=", tm_train, "s \n")
 cat("Time for testing model=", tm_test[1], "s \n")
 ```
-Time for constructing training features=  s 
-Time for constructing testing features=  s 
-Time for training model=  s 
-Time for testing model=  s
+
 

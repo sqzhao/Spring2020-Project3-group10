@@ -17,9 +17,11 @@ Term: Spring 2020
 
 + Project summary: In this project, we created a classification engine for facial emotion recognition. 
 
-We were provided with a set of 2,500 facial images with 22 different emontions. Our client is interested in creating an mobile AI program that accurately recognizes the emotion from facial images. The current practice on our client side is using boosted decision stumps on facial landmark features in which 6006 features are drawn from raw images and 78 ficucial points and Gradient Boosting Model (GBM) is implemented to train the model and make prediction. We take our client's current practice as our baseline model. In this baseline, it has an around 38.2% of accurate rate for predicting emontions.
+We were provided with a set of 2,500 facial images with 22 different emontions. Our client is interested in creating an mobile AI program that accurately recognizes the emotion from facial images. The current practice on our client side is using boosted decision stumps on full facial landmark features. 
 
-To improve the performance, we reduced and used only the features of inner face and tried different models including Xgboost, PCA&LDA, SVM and Neural Network. We noted that the stacking model of Neural Network and GBM is a good refinement of the client model. Having conducted in-depth research and simulated accuracy rates from different sampled train vs test datasets, we noted that svm performed stably well, whereas deep learing model sometimes did overperformed svm model but it had a great variation. Therefore, We finally choose the stacking model as our final choice.
+We take our client's current practice as our baseline model yet only uses the inner face fiducial points to train the GBM model. In this baseline, it has around 42.4% accurate rate for predicting emontions.
+
+To improve the baseline model performance, we tried to developed an advanced model. Used only inner face features, we tried different candidage models including Xgboost, PCA&LDA, SVM and Neural Network. We noted that the stacking model of Neural Network and GBM stood out to our team. Having conducted in-depth research and simulated accuracy rates from different sampled train vs test datasets, we noted that svm performed stably well, whereas deep learing model sometimes did overperformed svm model but it had a great variation. Therefore, We finally choose the stacking model as our final choice.
 
 We has achieved an accuracy rate of 49% which improves our client's current model and at the same time, our model achieved high efficiency since running time doesn't increase much.
 

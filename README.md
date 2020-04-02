@@ -28,7 +28,7 @@ We has achieved an accuracy rate of 49% which improves our client's current mode
 **Contribution statement**: 
 Baseline Model: Siqi developed the Baseline model using full face fiducial points and tuned the parameters. Guoying found features and compared inner face points with half face points. Guoying, Xinwen, Liangcao, and Wenfeng explored feature engineering for improving the baseline model.
 
-Advanced Models: Siqi developed the advanced candidate model of PCA & LDA. Using PCA to achieve dimension reduction, and use LDA for classification. Xinwen carried out the advanced candidate SVM model and tuned the parameters.
+Advanced Models: Siqi developed the advanced candidate model of PCA & LDA. Using PCA to achieve dimension reduction, and use LDA for classification. Xinwen carried out the advanced candidate SVM model and tuned the parameters. Wenfeng tried the XGboost model and created feature selection using recursive feature elimination method.
 
 Github and presentation: Siqi wrote README.md and drafted the template rmd for in-class testing. Guoying wrote README.md and the report for the baseline model.
 

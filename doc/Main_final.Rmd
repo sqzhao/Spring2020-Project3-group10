@@ -252,7 +252,7 @@ cat("Time for testing model=", tm_test[1], "s \n")
 ```
 
 
-###Reference
+### Reference
 - Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.
 
 
@@ -262,7 +262,8 @@ cat("Time for testing model=", tm_test[1], "s \n")
 
 
 
-##Part2 : Advanced Model
+## Part2 : Advanced Model
+
 ### Train a classification model with training features and responses
 Call the train model and test model from library. 
 
@@ -288,7 +289,7 @@ source("../lib/test_adv.R")
 
 #### Model selection with cross-validation
 * Do model selection by choosing among different values of training model parameters. In this case, we mainly focus on the hidden layer size, because we already examine how number of tree will influence the performance of GBM model.   
-```{r , eval=F}
+```{r }
 
 source("../lib/cross_validation_adv.R")
 t<-c(50, 100, 200)
@@ -311,17 +312,17 @@ par_best <- list(t = model_best,nfolds = 5)
 ```
 
 * Train the model with the entire training set using the selected model (model parameter) via cross-validation.
-```{r }
+```{r}
 tm_train=NA
 time_start<-Sys.time()
 fit_train_adv <- train_adv(h2o_train, par_best)
 time_end<-Sys.time()
 tm_train<-as.numeric(difftime(time_end, time_start))*60
-# delete my_ensemble in "../output/"  if you need to run the following code (to save the new model)
+#delete my_ensemble in "../output/" if you want to run the following code (to save the new model)
 #h2o.saveModel(fit_train_adv$model, path ="../output/")
 ```
 
-### Step 5: Run test on test images
+### Run test on test images
 ```{r }
 tm_test=NA
 if(run.test){

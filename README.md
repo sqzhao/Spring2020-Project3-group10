@@ -25,7 +25,13 @@ To improve the baseline model performance, we try to developed an advanced model
 
 We has achieved an accuracy rate of 49% which improves our client's current model and at the same time, our model achieved high efficiency since running time doesn't increase much.
 
-**Contribution statement**: ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
+**Contribution statement**: 
+Baseline Model: Siqi developed the Baseline model using full face fiducial points and tuned the parameters. Guoying, Xinwen, Liangcao, and Wenfeng explored feature engineering for improving the baseline model.
+
+Advanced Models: Siqi developed the advanced candidate model of PCA & LDA. Using PCA to achieve dimension reduction, and use LDA for classification. Xinwen carried out the advanced candidate SVM model and tuned the parameters.
+
+Github and presentation: Siqi wrote README.md and drafted the template rmd for in-class testing
+All team members contributed to the GitHub repository and prepared the presentation. All team members approve our work presented in our GitHub repository including this contribution statement.
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 

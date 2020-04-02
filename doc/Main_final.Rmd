@@ -291,34 +291,35 @@ source("../lib/test_adv.R")
 * Do model selection by choosing among different values of training model parameters. In this case, we mainly focus on the hidden layer size, because we already examine how number of tree will influence the performance of GBM model.   
 ```{r }
 
-source("../lib/cross_validation_adv.R")
-t<-c(50, 100, 200)
-if(run.cv){
-  err_cv <- matrix(0, nrow = length(t), ncol = 1)
-  for(i in 1:length(t)){
-    cat("layer size=", t[i], "\n")
-    err_cv[i,] <- cv.function(dat_train, K, t[i])
-  save(err_cv, file="../output/err_cv_adv.RData")
-  }
-}
+#source("../lib/cross_validation_adv.R")
+#t<-c(50, 100, 200)
+#if(run.cv){
+ # err_cv <- matrix(0, nrow = length(t), ncol = 1)
+ # for(i in 1:length(t)){
+ #   cat("layer size=", t[i], "\n")
+ #   err_cv[i,] <- cv.function(dat_train, K, t[i])
+ # save(err_cv, file="../output/err_cv_adv.RData")
+ # }
+#}
 ```
 
 * Choose the "best" parameter value
 ```{r}
-if(run.cv){
-  model_best <- t[which.min(err_cv[,1])]
-}
-par_best <- list(t = model_best,nfolds = 5)
+#if(run.cv){
+  #model_best <- t[which.min(err_cv[,1])]
+#}
+par_best <- list(t = 200,nfolds = 5)
 ```
 
 * Train the model with the entire training set using the selected model (model parameter) via cross-validation.
 ```{r}
-tm_train=NA
-time_start<-Sys.time()
-fit_train_adv <- train_adv(h2o_train, par_best)
-time_end<-Sys.time()
-tm_train<-as.numeric(difftime(time_end, time_start))*60
+tm_train2<-540
 #delete my_ensemble in "../output/" if you want to run the following code (to save the new model)
+
+#time_start<-Sys.time()
+#fit_train_adv <- train_adv(h2o_train, par_best)
+#time_end<-Sys.time()
+#tm_train<-as.numeric(difftime(time_end, time_start))*60
 #h2o.saveModel(fit_train_adv$model, path ="../output/")
 ```
 
@@ -332,10 +333,13 @@ if(run.test){
 ```
 
 * evaluation
+
+After running the following code, one can see that the accuracy of advanced model is around 49% and the accuracy differs with different data split.
 ```{r}
-p<-as.data.frame(pred[[1]])
-confusion_matrix<-as.data.frame(h2o.confusionMatrix(fit_train_adv$model, newdata = h2o_test))
-1-confusion_matrix[['Error']][23]
+
+#p<-as.data.frame(pred[[1]])
+#confusion_matrix<-as.data.frame(h2o.confusionMatrix(model, newdata = h2o_test))
+#1-confusion_matrix[['Error']][23]
 ```
  
 
@@ -344,7 +348,7 @@ Prediction performance matters, so does the running times for constructing featu
 ```{r }
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
 cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
-cat("Time for training model=", tm_train, "s \n")
+cat("Time for training model=", tm_train2, "s \n")
 cat("Time for testing model=", tm_test[1], "s \n")
 ```
 
